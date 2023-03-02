@@ -4,6 +4,8 @@ This connector is a service that, on the one hand, detects a terminal and exchan
 protocol PrivatBank, using a TCP connection for this. On the other hand, it is implemented HTTP server that can receive
 / send JSON requests and broadcast them to the terminal
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/subsan/http2privat_json.svg)](https://hub.docker.com/r/subsan/http2privat_json)
+
 ## Run
 
 `docker run -d -e TERMINAL_IP='192.168.0.111' -p 3333:3333 --rm subsan/http2privat_json:latest`
