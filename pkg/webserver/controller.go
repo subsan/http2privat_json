@@ -14,7 +14,10 @@ func getCheck(w http.ResponseWriter, r *http.Request) {
 
 	json, _ := json2.Marshal(response)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
+	_, err := w.Write(json)
+	if err != nil {
+		log.Printf(" [EE] [webserver] [check] Error write into response: %+v", err.Error())
+	}
 }
 
 func command(w http.ResponseWriter, r *http.Request) {
@@ -46,5 +49,8 @@ func command(w http.ResponseWriter, r *http.Request) {
 
 	json, _ := json2.Marshal(response)
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
+	_, err = w.Write(json)
+	if err != nil {
+		log.Printf(" [EE] [webserver] [command] Error write into response: %+v", err.Error())
+	}
 }

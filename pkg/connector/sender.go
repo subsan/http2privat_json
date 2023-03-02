@@ -19,7 +19,7 @@ var inTransaction inTransactionStructure
 func SyncSender(json JsonEntity) JsonEntity {
 	log.Printf(" [  ] [connector] [sender] Initialize sync sender: %+v\n", json)
 	inTransaction.mu.Lock()
-	if inTransaction.v == true {
+	if inTransaction.v {
 		inTransaction.mu.Unlock()
 		return JsonEntity{
 			Error:            true,
