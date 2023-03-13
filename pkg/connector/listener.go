@@ -34,6 +34,8 @@ func disconnect() {
 	if connection != nil {
 		err := connection.Close()
 		if err != nil {
+			log.Printf(" [  ] [connector] error when disconnect")
+
 			return
 		}
 	}
@@ -63,10 +65,8 @@ func Listener(address string) {
 		i, err = connection.Read(answer)
 		if err != nil && err != io.EOF {
 			log.Printf(" [WW] [connector] error reading message: %+v\n", err)
+			reconnect()
 
-			for !isConnected {
-				reconnect()
-			}
 			break
 		}
 		if i != 0 {
@@ -78,7 +78,10 @@ func Listener(address string) {
 				var json JsonEntity
 				err := json2.Unmarshal(a, &json)
 				if err != nil {
-					return
+					log.Printf(" [WW] [connector] Error unmarshaling answer JSON: %+v\n", err)
+					reconnect()
+
+					break
 				}
 				log.Printf(" [  ] [connector] Get message: %+v\n", json)
 				buffer <- json
