@@ -2,7 +2,6 @@ package connector
 
 import (
 	json2 "encoding/json"
-	"errors"
 	"github.com/subsan/http2privat_json/pkg/config"
 	"log"
 	"sync"
@@ -97,21 +96,20 @@ func sender(json JsonEntity) error {
 func writeEth(buffer []byte) error {
 	var n int
 	var err error
-	for {
-		if err = connection.SetWriteDeadline(time.Now().Add(config.Config.Timeout.Write)); err != nil {
-			continue
-		}
-		n, err = connection.Write(buffer)
-		if err != nil {
-			log.Printf(" [WW] [connector] [writter] Error write: %+v\n", err)
-		} else {
-			break
-		}
+
+	if err = connection.SetWriteDeadline(time.Now().Add(config.Config.Timeout.Write)); err != nil {
+		log.Printf(" [WW] [connector] [writter] Error set deadline: %+v\n", err)
+
+		return err
 	}
+
+	n, err = connection.Write(buffer)
 	if err != nil {
 		log.Printf(" [WW] [connector] [writter] Error TCP write: %+v\n", err)
-		err = errors.New("write error")
+
+		return err
 	}
+
 	log.Printf(" [  ] [connector] [sender] wrote %d bytes.", n)
 	return err
 }
