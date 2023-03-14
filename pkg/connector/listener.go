@@ -42,17 +42,19 @@ func disconnect() {
 }
 
 func reconnect() {
-	time.Sleep(config.Config.Timeout.Reconnect)
-	log.Printf(" [  ] [connector] try reconnect")
-	disconnect()
-	connect()
+	for !isConnected {
+		time.Sleep(config.Config.Timeout.Reconnect)
+		log.Printf(" [  ] [connector] try reconnect")
+		disconnect()
+		connect()
+	}
 }
 
 func Listener(address string) {
 	connectionAddress = address
 	connect()
 
-	for !isConnected {
+	if !isConnected {
 		reconnect()
 	}
 
