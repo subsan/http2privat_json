@@ -42,6 +42,8 @@ func disconnect() {
 }
 
 func reconnect() {
+	disconnect()
+
 	for !isConnected {
 		time.Sleep(config.Config.Timeout.Reconnect)
 		log.Printf(" [  ] [connector] try reconnect")
