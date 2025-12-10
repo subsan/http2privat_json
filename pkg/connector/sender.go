@@ -2,10 +2,11 @@ package connector
 
 import (
 	json2 "encoding/json"
-	"github.com/subsan/http2privat_json/pkg/config"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/subsan/http2privat_json/pkg/config"
 )
 
 type inTransactionStructure struct {
@@ -28,6 +29,18 @@ func SyncSender(json JsonEntity) JsonEntity {
 	inTransaction.v = true
 	inTransaction.mu.Unlock()
 
+	if err := ensureConnected(); err != nil {
+		inTransaction.mu.Lock()
+		inTransaction.v = false
+		inTransaction.mu.Unlock()
+
+		return JsonEntity{
+			Error:            true,
+			ErrorDescription: err.Error(),
+		}
+	}
+	stopKeepAlive()
+
 	err := sender(json)
 	if err != nil {
 		inTransaction.mu.Lock()
@@ -45,7 +58,7 @@ func SyncSender(json JsonEntity) JsonEntity {
 		inTransaction.mu.Lock()
 		inTransaction.v = false
 		inTransaction.mu.Unlock()
-
+		startOrResetKeepAlive()
 		return answer
 	case <-time.After(config.Config.Timeout.Transaction):
 		log.Printf(" [WW] [connector] [syncSender] Timeout waiting response message")
@@ -53,7 +66,7 @@ func SyncSender(json JsonEntity) JsonEntity {
 		inTransaction.mu.Lock()
 		inTransaction.v = false
 		inTransaction.mu.Unlock()
-
+		startOrResetKeepAlive()
 		return JsonEntity{
 			Error:            true,
 			ErrorDescription: "Transaction timeout",
@@ -76,6 +89,9 @@ func interrupt() {
 }
 
 func sender(json JsonEntity) error {
+	if err := ensureConnected(); err != nil {
+		return err
+	}
 	data, err := json2.Marshal(json)
 	if err != nil {
 		log.Printf(" [WW] [connector] [sender] Error marshaling JSON: %+v\n", err)
@@ -89,6 +105,8 @@ func sender(json JsonEntity) error {
 
 		return err
 	}
+
+	startOrResetKeepAlive()
 
 	return nil
 }

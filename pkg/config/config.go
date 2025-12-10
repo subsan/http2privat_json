@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Struct struct {
@@ -20,6 +21,7 @@ type Struct struct {
 		Write       time.Duration `default:"15s"`
 		Reconnect   time.Duration `default:"5s"`
 		Transaction time.Duration `default:"10m"`
+		KeepAlive   time.Duration `default:"60s"`
 	}
 }
 
