@@ -41,6 +41,11 @@ func SyncSender(json JsonEntity) JsonEntity {
 	}
 	stopKeepAlive()
 
+	// Drop anything left in the buffer from previous transactions
+	// (late responses, stale ServiceMessage, etc.) — otherwise the next
+	// request would receive a response that does not belong to it.
+	drainBuffer()
+
 	err := sender(json)
 	if err != nil {
 		inTransaction.mu.Lock()
@@ -53,23 +58,39 @@ func SyncSender(json JsonEntity) JsonEntity {
 		}
 	}
 
-	select {
-	case answer := <-buffer:
-		inTransaction.mu.Lock()
-		inTransaction.v = false
-		inTransaction.mu.Unlock()
-		startOrResetKeepAlive()
-		return answer
-	case <-time.After(config.Config.Timeout.Transaction):
-		log.Printf(" [WW] [connector] [syncSender] Timeout waiting response message")
-		interrupt()
-		inTransaction.mu.Lock()
-		inTransaction.v = false
-		inTransaction.mu.Unlock()
-		startOrResetKeepAlive()
-		return JsonEntity{
-			Error:            true,
-			ErrorDescription: "Transaction timeout",
+	expectedMethod := json.Method
+	deadline := time.After(config.Config.Timeout.Transaction)
+
+	for {
+		select {
+		case answer := <-buffer:
+			// Match the response by Method. Anything that does not match
+			// (intermediate ServiceMessage, late frames) is logged and
+			// skipped while we keep waiting for the real response.
+			if answer.Method != expectedMethod {
+				log.Printf(" [WW] [connector] [syncSender] skipping unmatched message (expected method=%q, got method=%q): %+v\n",
+					expectedMethod, answer.Method, answer)
+				continue
+			}
+			inTransaction.mu.Lock()
+			inTransaction.v = false
+			inTransaction.mu.Unlock()
+			startOrResetKeepAlive()
+			return answer
+		case <-deadline:
+			log.Printf(" [WW] [connector] [syncSender] Timeout waiting response message (expected method=%q)", expectedMethod)
+			interrupt()
+			// Safety net: drop anything that may have arrived right now,
+			// so the next SyncSender starts with a clean channel.
+			drainBuffer()
+			inTransaction.mu.Lock()
+			inTransaction.v = false
+			inTransaction.mu.Unlock()
+			startOrResetKeepAlive()
+			return JsonEntity{
+				Error:            true,
+				ErrorDescription: "Transaction timeout",
+			}
 		}
 	}
 }

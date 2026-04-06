@@ -15,7 +15,20 @@ import (
 var connection net.Conn
 var isConnected = false
 var connectionAddress string
-var buffer = make(chan JsonEntity, 1)
+var buffer = make(chan JsonEntity, 8)
+
+// drainBuffer non-blockingly discards any messages left in the channel
+// from previous (including timed-out) transactions.
+func drainBuffer() {
+	for {
+		select {
+		case stale := <-buffer:
+			log.Printf(" [WW] [connector] [drain] dropping stale message: %+v\n", stale)
+		default:
+			return
+		}
+	}
+}
 var connMu sync.Mutex
 var keepAliveMu sync.Mutex
 var keepAliveTimer *time.Timer
