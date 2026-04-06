@@ -21,6 +21,7 @@ var keepAliveMu sync.Mutex
 var keepAliveTimer *time.Timer
 
 func stopKeepAlive() {
+	log.Printf(" [  ] [connector] [keepAlive] stop")
 	keepAliveMu.Lock()
 	defer keepAliveMu.Unlock()
 	if keepAliveTimer != nil {
@@ -35,6 +36,7 @@ func stopKeepAlive() {
 }
 
 func startOrResetKeepAlive() {
+	log.Printf(" [  ] [connector] [keepAlive] restart")
 	keepAliveMu.Lock()
 	defer keepAliveMu.Unlock()
 	if keepAliveTimer == nil {
@@ -55,6 +57,7 @@ func startOrResetKeepAlive() {
 }
 
 func connect() {
+	log.Printf(" [  ] [connector] connect")
 	connMu.Lock()
 	defer connMu.Unlock()
 	var err error
@@ -71,6 +74,7 @@ func connect() {
 }
 
 func disconnect() {
+	log.Printf(" [  ] [connector] disconnect")
 	stopKeepAlive()
 	connMu.Lock()
 	defer connMu.Unlock()
@@ -86,6 +90,7 @@ func disconnect() {
 }
 
 func ensureConnected() error {
+	log.Printf(" [  ] [connector] ensure connection")
 	if isConnected {
 		return nil
 	}

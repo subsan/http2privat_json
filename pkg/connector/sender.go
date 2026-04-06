@@ -89,6 +89,7 @@ func interrupt() {
 }
 
 func sender(json JsonEntity) error {
+	log.Printf(" [  ] [connector] [sender] Initialize sender: %+v\n", json)
 	if err := ensureConnected(); err != nil {
 		return err
 	}
